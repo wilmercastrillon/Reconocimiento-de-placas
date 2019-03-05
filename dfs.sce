@@ -13,7 +13,8 @@ function mask=dfs(img_bin, fila, columna)
     cola(2,1)=columna;
     index = 1;
     len = 0;
-    col = [tam(2),0];
+    col = [tam(2),0];//min - max
+    fil = [tam(1),0];//max - min
     
     while index > 0
         x = cola(1, index);
@@ -32,15 +33,19 @@ function mask=dfs(img_bin, fila, columna)
                 cola(2, index) = auxy;
                 col(1) = min(col(1),auxy);
                 col(2) = max(col(2),auxy);
+                fil(1) = min(fil(1),auxx);
+                fil(2) = max(fil(2),auxx);
             end
         end
     end
     save("longitud.dat",'len');
     save("col.dat",'col');
+    save("fil.dat",'fil');
     //disp(col);
 endfunction
 
-function res=caracteres(imagen)
+function res=caracteres(imagen, nombre)
+    imagen = imresize(imagen, [640,480])
     tam = size(imagen);
     img_bin = im2bw(imagen,0.3);
     bloque = int32(tam(2)/6);
@@ -49,52 +54,50 @@ function res=caracteres(imagen)
     mitad_col = int32(tam(2)/2);
     res = zeros(tam(1),tam(2)) == 1;
     imshow(res);
-    con = 0;
+    incremento = [1,-1];
     
-    i=mitad_col;
-    while i>0
-        if img_bin(mitad_fil,i)==%f && res(mitad_fil,i)==%f then
-            printf('\nVamos a probar %d,%d\n',mitad_fil,i);
-            aux = dfs(img_bin, mitad_fil,i);
-            load("longitud.dat",'len');
-            load("col.dat",'col');
-            i = col(1)-1;
-            porcentaje = (len/(tam(1)*tam(2)))*100.0;
-            printf('1|lon = %d | porcentaje = %.5f\n', len, porcentaje);
-            if 2.6 < porcentaje && porcentaje < 8.4 then
-                res = res | aux;
-                con = con+1;
-                imshow(res);
-                if con==3 then
-                    break;
+    //mkdir("3"); mkdir("0"); mkdir("1");mkdir("V");mkdir("F");mkdir("I");
+    //nombre=["3.dat","0/0.dat","1/1.dat","V/V.dat","F/F.dat","I/I.dat"];
+    indice = [4 5 6 3 2 1]
+    acum = 1;
+    for j=1:2
+        con = 0;
+        i = mitad_col;
+        while i>0 && i<=tam(2)
+            if img_bin(mitad_fil,i)==%f && res(mitad_fil,i)==%f then
+                printf('\nVamos a probar %d,%d\n',mitad_fil,i);
+                aux = dfs(img_bin, mitad_fil,i);
+                load("longitud.dat",'len');
+                load("col.dat",'col');
+                load("fil.dat",'fil');
+                if j==1 then
+                    i = col(2) + 1;
+                else
+                    i = col(1) - 1;
+                end
+                porcentaje = (len/(tam(1)*tam(2)))*100.0;
+                printf('2|lon = %d | porcentaje = %.5f\n', len, porcentaje);
+                if 2.6 < porcentaje && porcentaje < 8.5 then
+                    res = res | aux;
+                    con = con+1;
+                    imshow(res);
+                    
+                    if exists('nombre') == 1 then
+                        caracter=aux(fil(1):fil(2),col(1):col(2));
+                        save(nombre(indice(acum)), 'caracter');
+                    end
+                    
+                    acum = acum+1;
+                    if con==3 then
+                        break;
+                    end
+                    //load("sss.dat", 'rango');
                 end
             end
+            i=i+incremento(j);
         end
-        i=i-1;
-    end
-    
-    i = mitad_col;
-    while i<=tam(2)
-        if img_bin(mitad_fil,i)==%f && res(mitad_fil,i)==%f then
-            printf('\nVamos a probar %d,%d\n',mitad_fil,i);
-            aux = dfs(img_bin, mitad_fil,i);
-            load("longitud.dat",'len');
-            load("col.dat",'col');
-            i = col(2)+1;
-            porcentaje = (len/(tam(1)*tam(2)))*100.0;
-            printf('2|lon = %d | porcentaje = %.5f\n', len, porcentaje);
-            if 2.6 < porcentaje && porcentaje < 8.5 then
-                res = res | aux;
-                con = con+1;
-                imshow(res);
-                if con==6 then
-                    break;
-                end
-            end
-        end
-        i=i+1;
-    end
-    //imshow(res);
+     end
+    imshow(res);
 endfunction
 
 
